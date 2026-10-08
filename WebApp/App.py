@@ -1,6 +1,7 @@
-# ================================
-# 1. IMPORT LIBRARIES
-# ================================
+# ============================================================
+# TRAFFIC SIGN AI - FLASK WEB APPLICATION
+# CNN CLASSIFICATION + YOLO DETECTION
+# ============================================================
 
 from flask import Flask, render_template, request, send_from_directory
 from tensorflow.keras.models import load_model
@@ -10,20 +11,25 @@ import cv2
 import json
 import os
 import time
+import traceback
+
 import numpy as np
 import onnxruntime as ort
 
 
-# ================================
-# 2. CREATE FLASK APPLICATION
-# ================================
+# ============================================================
+# 1. CREATE FLASK APPLICATION
+# ============================================================
 
 app = Flask(__name__)
 
+# Maximum uploaded image size: 10 MB
+app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
 
-# ================================
-# 3. PROJECT PATHS
-# ================================
+
+# ============================================================
+# 2. PROJECT PATHS
+# ============================================================
 
 PROJECT_FOLDER = os.path.dirname(
     os.path.dirname(
@@ -31,14 +37,18 @@ PROJECT_FOLDER = os.path.dirname(
     )
 )
 
+# IMPORTANT:
+# Model folder is lowercase
 MODEL_FOLDER = os.path.join(
     PROJECT_FOLDER,
-    "Model"
+    "model"
 )
 
+# IMPORTANT:
+# Upload folder is lowercase
 UPLOAD_FOLDER = os.path.join(
     app.root_path,
-    "Uploads"
+    "uploads"
 )
 
 os.makedirs(
@@ -47,61 +57,126 @@ os.makedirs(
 )
 
 
-# ================================
-# 4. LOAD CNN MODEL
-# ================================
+# ============================================================
+# 3. MODEL FILE PATHS
+# ============================================================
 
-model_path = os.path.join(
+CNN_MODEL_PATH = os.path.join(
     MODEL_FOLDER,
     "traffic_sign_model.keras"
 )
 
-model = load_model(
-    model_path
-)
-
-
-# ================================
-# 5. LOAD YOLO DETECTION MODEL
-# ================================
-
-yolo_model_path = os.path.join(
+YOLO_MODEL_PATH = os.path.join(
     MODEL_FOLDER,
     "best.onnx"
 )
 
-yolo_session = ort.InferenceSession(
-    yolo_model_path,
-    providers=["CPUExecutionProvider"]
+CLASSES_PATH = os.path.join(
+    MODEL_FOLDER,
+    "classes.json"
 )
 
-yolo_input_name = yolo_session.get_inputs()[0].name
+
+# ============================================================
+# 4. CHECK REQUIRED FILES
+# ============================================================
+
+required_files = [
+    CNN_MODEL_PATH,
+    YOLO_MODEL_PATH,
+    CLASSES_PATH
+]
+
+for file_path in required_files:
+
+    if not os.path.exists(file_path):
+
+        raise FileNotFoundError(
+            f"Required file not found: {file_path}"
+        )
+
+
+# ============================================================
+# 5. LOAD CNN MODEL
+# ============================================================
+
+print()
+print("==============================================")
+print("Loading CNN model...")
+print("==============================================")
+
+model = load_model(
+    CNN_MODEL_PATH
+)
+
+print(
+    "CNN model loaded successfully."
+)
+
+
+# ============================================================
+# 6. LOAD YOLO MODEL
+# ============================================================
+
+print()
+print("==============================================")
+print("Loading YOLO model...")
+print("==============================================")
+
+yolo_session = ort.InferenceSession(
+    YOLO_MODEL_PATH,
+    providers=[
+        "CPUExecutionProvider"
+    ]
+)
+
+yolo_input_name = (
+    yolo_session
+    .get_inputs()[0]
+    .name
+)
 
 print(
     "YOLO model loaded successfully."
 )
 
-
-# ================================
-# 6. LOAD TRAFFIC SIGN CLASSES
-# ================================
-
-classes_path = os.path.join(
-    MODEL_FOLDER,
-    "Classes.json"
+print(
+    "YOLO input:",
+    yolo_input_name
 )
 
+
+# ============================================================
+# 7. LOAD TRAFFIC SIGN CLASSES
+# ============================================================
+
+print()
+print("==============================================")
+print("Loading traffic sign classes...")
+print("==============================================")
+
 with open(
-    classes_path,
-    "r"
+    CLASSES_PATH,
+    "r",
+    encoding="utf-8"
 ) as file:
 
     classes = json.load(file)
 
 
-# ================================
-# 7. ALLOWED IMAGE TYPES
-# ================================
+print(
+    "Traffic sign classes loaded successfully."
+)
+
+print(
+    "Number of classes:",
+    len(classes)
+)
+
+
+# ============================================================
+# 8. ALLOWED IMAGE TYPES
+# ============================================================
 
 ALLOWED_EXTENSIONS = {
     ".jpg",
@@ -112,9 +187,9 @@ ALLOWED_EXTENSIONS = {
 }
 
 
-# ================================
-# 8. CHECK FILE TYPE
-# ================================
+# ============================================================
+# 9. CHECK FILE TYPE
+# ============================================================
 
 def allowed_file(filename):
 
@@ -125,9 +200,50 @@ def allowed_file(filename):
     return extension in ALLOWED_EXTENSIONS
 
 
-# ================================
-# 9. IMAGE SHARPNESS / BLUR
-# ================================
+# ============================================================
+# 10. GET CLASS NAME
+# ============================================================
+
+def get_class_name(class_id):
+
+    class_id = int(class_id)
+
+    if isinstance(classes, dict):
+
+        class_name = classes.get(
+            str(class_id)
+        )
+
+        if class_name is not None:
+
+            return str(
+                class_name
+            )
+
+        class_name = classes.get(
+            class_id
+        )
+
+        if class_name is not None:
+
+            return str(
+                class_name
+            )
+
+    if isinstance(classes, list):
+
+        if 0 <= class_id < len(classes):
+
+            return str(
+                classes[class_id]
+            )
+
+    return f"Traffic Sign Class {class_id}"
+
+
+# ============================================================
+# 11. IMAGE SHARPNESS / BLUR
+# ============================================================
 
 def get_blur_score(image):
 
@@ -141,7 +257,9 @@ def get_blur_score(image):
         cv2.CV_64F
     ).var()
 
-    return sharpness
+    return float(
+        sharpness
+    )
 
 
 def is_blurry(image):
@@ -155,9 +273,9 @@ def is_blurry(image):
     return sharpness < blur_threshold
 
 
-# ================================
-# 10. TRAFFIC SIGN VISUAL ANALYSIS
-# ================================
+# ============================================================
+# 12. TRAFFIC SIGN COLOR MASKS
+# ============================================================
 
 def get_color_masks(image):
 
@@ -171,10 +289,6 @@ def get_color_masks(image):
         resized,
         cv2.COLOR_BGR2HSV
     )
-
-    # ============================
-    # RED MASK
-    # ============================
 
     red_1 = cv2.inRange(
         hsv,
@@ -193,19 +307,11 @@ def get_color_masks(image):
         red_2
     )
 
-    # ============================
-    # BLUE MASK
-    # ============================
-
     blue_mask = cv2.inRange(
         hsv,
         (90, 50, 40),
         (140, 255, 255)
     )
-
-    # ============================
-    # YELLOW MASK
-    # ============================
 
     yellow_mask = cv2.inRange(
         hsv,
@@ -213,12 +319,16 @@ def get_color_masks(image):
         (40, 255, 255)
     )
 
-    return red_mask, blue_mask, yellow_mask
+    return (
+        red_mask,
+        blue_mask,
+        yellow_mask
+    )
 
 
-# ================================
-# 11. CHECK TRAFFIC SIGN SHAPE
-# ================================
+# ============================================================
+# 13. CHECK SIGN-LIKE SHAPE
+# ============================================================
 
 def has_sign_like_shape(image):
 
@@ -228,8 +338,8 @@ def has_sign_like_shape(image):
         interpolation=cv2.INTER_AREA
     )
 
-    red_mask, blue_mask, yellow_mask = get_color_masks(
-        resized
+    red_mask, blue_mask, yellow_mask = (
+        get_color_masks(resized)
     )
 
     color_mask = cv2.bitwise_or(
@@ -279,8 +389,10 @@ def has_sign_like_shape(image):
         if area < 500:
             continue
 
-        x, y, width, height = cv2.boundingRect(
-            contour
+        x, y, width, height = (
+            cv2.boundingRect(
+                contour
+            )
         )
 
         if width < 20 or height < 20:
@@ -311,7 +423,8 @@ def has_sign_like_shape(image):
             continue
 
         fill_ratio = (
-            area / float(rectangle_area)
+            area
+            / float(rectangle_area)
         )
 
         if fill_ratio >= 0.20:
@@ -321,9 +434,9 @@ def has_sign_like_shape(image):
     return False
 
 
-# ================================
-# 12. CHECK TRAFFIC SIGN BORDER
-# ================================
+# ============================================================
+# 14. CHECK SIGN-LIKE BORDER
+# ============================================================
 
 def has_sign_like_border(image):
 
@@ -333,8 +446,8 @@ def has_sign_like_border(image):
         interpolation=cv2.INTER_AREA
     )
 
-    red_mask, blue_mask, yellow_mask = get_color_masks(
-        resized
+    red_mask, blue_mask, yellow_mask = (
+        get_color_masks(resized)
     )
 
     combined = cv2.bitwise_or(
@@ -376,8 +489,10 @@ def has_sign_like_border(image):
             perimeter * perimeter
         )
 
-        x, y, width, height = cv2.boundingRect(
-            contour
+        x, y, width, height = (
+            cv2.boundingRect(
+                contour
+            )
         )
 
         if width < 25 or height < 25:
@@ -388,7 +503,9 @@ def has_sign_like_border(image):
         )
 
         reasonable_ratio = (
-            0.55 <= aspect_ratio <= 1.80
+            0.55
+            <= aspect_ratio
+            <= 1.80
         )
 
         if (
@@ -401,18 +518,18 @@ def has_sign_like_border(image):
     return False
 
 
-# ================================
-# 13. TRAFFIC SIGN VISUAL CHECK
-# ================================
+# ============================================================
+# 15. TRAFFIC SIGN VISUAL CHECK
+# ============================================================
 
 def looks_like_traffic_sign(image):
 
-    shape_check = has_sign_like_shape(
-        image
+    shape_check = (
+        has_sign_like_shape(image)
     )
 
-    border_check = has_sign_like_border(
-        image
+    border_check = (
+        has_sign_like_border(image)
     )
 
     print(
@@ -425,24 +542,21 @@ def looks_like_traffic_sign(image):
         border_check
     )
 
-    if shape_check or border_check:
+    return (
+        shape_check
+        or border_check
+    )
 
-        return True
 
-    return False
-
-
-# ================================
-# 14. YOLO TRAFFIC SIGN DETECTION
-# ================================
+# ============================================================
+# 16. YOLO TRAFFIC SIGN DETECTION
+# ============================================================
 
 def detect_traffic_sign(image):
 
-    original_height, original_width = image.shape[:2]
-
-    # ============================
-    # RESIZE TO YOLO INPUT
-    # ============================
+    original_height, original_width = (
+        image.shape[:2]
+    )
 
     resized = cv2.resize(
         image,
@@ -450,70 +564,91 @@ def detect_traffic_sign(image):
         interpolation=cv2.INTER_LINEAR
     )
 
-    # ============================
-    # BGR → RGB
-    # ============================
-
     resized = cv2.cvtColor(
         resized,
         cv2.COLOR_BGR2RGB
     )
-
-    # ============================
-    # HWC → CHW
-    # ============================
 
     resized = np.transpose(
         resized,
         (2, 0, 1)
     )
 
-    # ============================
-    # NORMALIZE
-    # ============================
-
     resized = resized.astype(
         np.float32
     ) / 255.0
-
-    # ============================
-    # ADD BATCH DIMENSION
-    # ============================
 
     input_tensor = np.expand_dims(
         resized,
         axis=0
     )
 
-    # ============================
-    # YOLO INFERENCE
-    # ============================
-
     outputs = yolo_session.run(
         None,
         {
-            yolo_input_name: input_tensor
+            yolo_input_name:
+                input_tensor
         }
     )
 
-    predictions = outputs[0][0]
+    if not outputs:
+
+        return None
+
+    predictions = outputs[0]
+
+    if predictions.ndim == 3:
+
+        predictions = predictions[0]
+
+    if predictions.ndim != 2:
+
+        print(
+            "Unexpected YOLO output shape:",
+            predictions.shape
+        )
+
+        return None
+
+    if predictions.shape[0] < predictions.shape[1]:
+
+        detection_rows = predictions.T
+
+    else:
+
+        detection_rows = predictions
 
     best_detection = None
+
     best_confidence = 0.0
 
-    # ============================
-    # PROCESS PREDICTIONS
-    # ============================
+    for prediction in detection_rows:
 
-    for prediction in predictions.T:
+        if len(prediction) < 5:
 
-        center_x = prediction[0]
-        center_y = prediction[1]
+            continue
 
-        box_width = prediction[2]
-        box_height = prediction[3]
+        center_x = float(
+            prediction[0]
+        )
+
+        center_y = float(
+            prediction[1]
+        )
+
+        box_width = float(
+            prediction[2]
+        )
+
+        box_height = float(
+            prediction[3]
+        )
 
         class_scores = prediction[4:]
+
+        if len(class_scores) == 0:
+
+            continue
 
         class_id = int(
             np.argmax(
@@ -525,18 +660,13 @@ def detect_traffic_sign(image):
             class_scores[class_id]
         )
 
-        # Detection threshold
-
         if confidence < 0.40:
-            continue
 
-        # Keep strongest detection
+            continue
 
         if confidence > best_confidence:
 
             best_confidence = confidence
-
-            # Center → corners
 
             x1 = int(
                 center_x
@@ -560,38 +690,37 @@ def detect_traffic_sign(image):
 
             best_detection = {
 
-                "class_id": class_id,
+                "class_id":
+                    class_id,
 
-                "confidence": confidence,
+                "confidence":
+                    confidence,
 
-                "x1": x1,
+                "x1":
+                    x1,
 
-                "y1": y1,
+                "y1":
+                    y1,
 
-                "x2": x2,
+                "x2":
+                    x2,
 
-                "y2": y2
-
+                "y2":
+                    y2
             }
-
-    # ============================
-    # NO DETECTION
-    # ============================
 
     if best_detection is None:
 
         return None
 
-    # ============================
-    # SCALE BOX TO ORIGINAL IMAGE
-    # ============================
-
     scale_x = (
-        original_width / 640.0
+        original_width
+        / 640.0
     )
 
     scale_y = (
-        original_height / 640.0
+        original_height
+        / 640.0
     )
 
     x1 = int(
@@ -613,10 +742,6 @@ def detect_traffic_sign(image):
         best_detection["y2"]
         * scale_y
     )
-
-    # ============================
-    # KEEP BOX INSIDE IMAGE
-    # ============================
 
     x1 = max(
         0,
@@ -650,17 +775,12 @@ def detect_traffic_sign(image):
         )
     )
 
-    # ============================
-    # INVALID BOX
-    # ============================
-
-    if x2 <= x1 or y2 <= y1:
+    if (
+        x2 <= x1
+        or y2 <= y1
+    ):
 
         return None
-
-    # ============================
-    # CROP DETECTED SIGN
-    # ============================
 
     crop = image[
         y1:y2,
@@ -671,15 +791,13 @@ def detect_traffic_sign(image):
 
         return None
 
-    # ============================
-    # RETURN DETECTION
-    # ============================
-
     return {
 
-        "class_id": best_detection["class_id"],
+        "class_id":
+            best_detection["class_id"],
 
-        "confidence": best_detection["confidence"],
+        "confidence":
+            best_detection["confidence"],
 
         "box": [
             x1,
@@ -688,14 +806,119 @@ def detect_traffic_sign(image):
             y2
         ],
 
-        "crop": crop
-
+        "crop":
+            crop
     }
 
 
-# ================================
-# 15. SERVE UPLOADED IMAGES
-# ================================
+# ============================================================
+# 17. CNN CLASSIFICATION
+# ============================================================
+
+def classify_image(image):
+
+    resized = cv2.resize(
+        image,
+        (32, 32),
+        interpolation=cv2.INTER_AREA
+    )
+
+    resized = resized.astype(
+        "float32"
+    ) / 255.0
+
+    resized = resized.reshape(
+        1,
+        32,
+        32,
+        3
+    )
+
+    prediction = model.predict(
+        resized,
+        verbose=0
+    )[0]
+
+    top_3_indices = (
+        prediction.argsort()[
+            -3:
+        ][::-1]
+    )
+
+    top_predictions = []
+
+    for class_id in top_3_indices:
+
+        class_id = int(
+            class_id
+        )
+
+        class_name = (
+            get_class_name(
+                class_id
+            )
+        )
+
+        class_confidence = (
+            float(
+                prediction[
+                    class_id
+                ]
+                * 100
+            )
+        )
+
+        top_predictions.append({
+
+            "name":
+                class_name,
+
+            "confidence":
+                round(
+                    class_confidence,
+                    2
+                )
+        })
+
+    predicted_class = int(
+        top_3_indices[0]
+    )
+
+    predicted_name = (
+        get_class_name(
+            predicted_class
+        )
+    )
+
+    confidence = float(
+        prediction[
+            predicted_class
+        ]
+        * 100
+    )
+
+    return {
+
+        "class_id":
+            predicted_class,
+
+        "name":
+            predicted_name,
+
+        "confidence":
+            round(
+                confidence,
+                2
+            ),
+
+        "top_predictions":
+            top_predictions
+    }
+
+
+# ============================================================
+# 18. SERVE UPLOADED IMAGES
+# ============================================================
 
 @app.route(
     "/uploads/<filename>"
@@ -708,332 +931,190 @@ def uploaded_file(filename):
     )
 
 
-# ================================
-# 16. HOME + PREDICTION
-# ================================
+# ============================================================
+# 19. HOME + IMAGE PREDICTION
+# ============================================================
 
 @app.route(
     "/",
-    methods=["GET", "POST"]
+    methods=[
+        "GET",
+        "POST"
+    ]
 )
 def home():
 
     predicted_name = None
-
     confidence = None
-
     image_filename = None
-
     top_predictions = []
-
     error_message = None
-
     blur_warning = None
 
-    # ============================
-    # CHECK IMAGE SUBMISSION
-    # ============================
+    try:
 
-    if request.method == "POST":
+        if request.method == "POST":
 
-        image = request.files.get(
-            "image"
-        )
-
-        # ============================
-        # NO IMAGE
-        # ============================
-
-        if image is None:
-
-            error_message = (
-                "Please select an image before prediction."
+            image = request.files.get(
+                "image"
             )
 
-        elif image.filename == "":
-
-            error_message = (
-                "Please select an image before prediction."
-            )
-
-        # ============================
-        # INVALID FILE TYPE
-        # ============================
-
-        elif not allowed_file(
-            image.filename
-        ):
-
-            error_message = (
-                "Unsupported image format. "
-                "Please upload a JPG, JPEG, PNG, BMP or WEBP image."
-            )
-
-        else:
-
-            # ============================
-            # SAFE FILENAME
-            # ============================
-
-            filename = secure_filename(
-                image.filename
-            )
-
-            # ============================
-            # CREATE UNIQUE FILENAME
-            # ============================
-
-            name, extension = os.path.splitext(
-                filename
-            )
-
-            counter = 1
-
-            original_filename = filename
-
-            while os.path.exists(
-                os.path.join(
-                    UPLOAD_FOLDER,
-                    filename
-                )
-            ):
-
-                filename = (
-                    f"{name}_{counter}{extension}"
-                )
-
-                counter += 1
-
-            # ============================
-            # SAVE IMAGE
-            # ============================
-
-            image_path = os.path.join(
-                UPLOAD_FOLDER,
-                filename
-            )
-
-            image.save(
-                image_path
-            )
-
-            image_filename = filename
-
-            # ============================
-            # READ IMAGE
-            # ============================
-
-            img = cv2.imread(
-                image_path
-            )
-
-            # ============================
-            # UNREADABLE IMAGE
-            # ============================
-
-            if img is None:
+            if image is None:
 
                 error_message = (
-                    "The selected image cannot be processed. "
-                    "Please upload a valid image."
+                    "Please select an image before prediction."
+                )
+
+            elif image.filename == "":
+
+                error_message = (
+                    "Please select an image before prediction."
+                )
+
+            elif not allowed_file(
+                image.filename
+            ):
+
+                error_message = (
+                    "Unsupported image format. "
+                    "Please upload JPG, JPEG, PNG, BMP or WEBP."
                 )
 
             else:
 
-                # ============================
-                # IMAGE DIMENSIONS
-                # ============================
-
-                height, width = img.shape[:2]
-
-                print(
-                    "\n=============================="
+                filename = secure_filename(
+                    image.filename
                 )
 
-                print(
-                    "Uploaded Image:",
-                    original_filename
-                )
-
-                print(
-                    "Image Size:",
-                    width,
-                    "x",
-                    height
-                )
-
-                # ============================
-                # BLUR ANALYSIS
-                # ============================
-
-                blur_score = get_blur_score(
-                    img
-                )
-
-                print(
-                    "Blur / Sharpness Score:",
-                    round(
-                        blur_score,
-                        2
+                name, extension = (
+                    os.path.splitext(
+                        filename
                     )
                 )
 
-                # ============================
-                # BLUR WARNING
-                # ============================
+                counter = 1
 
-                if is_blurry(img):
+                original_filename = filename
 
-                    blur_warning = (
-                        "The image appears blurry, "
-                        "but the CNN will still analyze it."
+                while os.path.exists(
+                    os.path.join(
+                        UPLOAD_FOLDER,
+                        filename
+                    )
+                ):
+
+                    filename = (
+                        f"{name}_{counter}{extension}"
                     )
 
-                    print(
-                        "Image Quality: BLURRY"
-                    )
+                    counter += 1
 
-                else:
-
-                    print(
-                        "Image Quality: CLEAR"
-                    )
-
-                # ============================
-                # TRAFFIC SIGN VISUAL CHECK
-                # ============================
-
-                sign_like = looks_like_traffic_sign(
-                    img
+                image_path = os.path.join(
+                    UPLOAD_FOLDER,
+                    filename
                 )
 
-                print(
-                    "Traffic Sign Visual Check:",
-                    sign_like
+                image.save(
+                    image_path
                 )
 
-                # ============================
-                # INVALID RANDOM IMAGE
-                # ============================
+                image_filename = filename
 
-                if not sign_like:
+                img = cv2.imread(
+                    image_path
+                )
+
+                if img is None:
 
                     error_message = (
-                        "Invalid image. "
-                        "Please upload an image containing "
-                        "a traffic sign."
+                        "The selected image cannot be processed. "
+                        "Please upload a valid image."
                     )
-
-                    print(
-                        "Result: INVALID TRAFFIC SIGN IMAGE"
-                    )
-
-                # ============================
-                # TRAFFIC SIGN → CNN
-                # ============================
 
                 else:
 
-                    # ============================
-                    # RESIZE IMAGE
-                    # ============================
-
-                    img = cv2.resize(
-                        img,
-                        (32, 32),
-                        interpolation=cv2.INTER_AREA
+                    height, width = (
+                        img.shape[:2]
                     )
 
-                    # ============================
-                    # NORMALIZE
-                    # ============================
-
-                    img = img.astype(
-                        "float32"
-                    ) / 255.0
-
-                    # ============================
-                    # ADD BATCH DIMENSION
-                    # ============================
-
-                    img = img.reshape(
-                        1,
-                        32,
-                        32,
-                        3
+                    print()
+                    print(
+                        "=============================================="
                     )
 
-                    # ============================
-                    # CNN PREDICTION
-                    # ============================
-
-                    prediction = model.predict(
-                        img,
-                        verbose=0
-                    )[0]
-
-                    # ============================
-                    # TOP 3
-                    # ============================
-
-                    top_3_indices = (
-                        prediction.argsort()[
-                            -3:
-                        ][::-1]
+                    print(
+                        "Uploaded Image:",
+                        original_filename
                     )
 
-                    for class_id in top_3_indices:
+                    print(
+                        "Image Size:",
+                        width,
+                        "x",
+                        height
+                    )
 
-                        class_id = int(
-                            class_id
+                    blur_score = (
+                        get_blur_score(
+                            img
+                        )
+                    )
+
+                    print(
+                        "Blur / Sharpness Score:",
+                        round(
+                            blur_score,
+                            2
+                        )
+                    )
+
+                    if is_blurry(img):
+
+                        blur_warning = (
+                            "The image appears blurry, "
+                            "but the CNN will still analyze it."
                         )
 
-                        class_name = classes[
-                            str(class_id)
-                        ]
-
-                        class_confidence = float(
-                            prediction[
-                                class_id
-                            ] * 100
+                        print(
+                            "Image Quality: BLURRY"
                         )
 
-                        top_predictions.append({
+                    else:
 
-                            "name": class_name,
+                        print(
+                            "Image Quality: CLEAR"
+                        )
 
-                            "confidence": round(
-                                class_confidence,
-                                2
-                            )
-
-                        })
-
-                    # ============================
-                    # MAIN PREDICTION
-                    # ============================
-
-                    predicted_class = int(
-                        top_3_indices[0]
+                    sign_like = (
+                        looks_like_traffic_sign(
+                            img
+                        )
                     )
 
-                    predicted_name = classes[
-                        str(predicted_class)
-                    ]
-
-                    confidence = float(
-                        prediction[
-                            predicted_class
-                        ] * 100
+                    print(
+                        "Traffic Sign Visual Check:",
+                        sign_like
                     )
 
-                    # ============================
-                    # TERMINAL OUTPUT
-                    # ============================
+                    result = classify_image(
+                        img
+                    )
+
+                    predicted_name = (
+                        result["name"]
+                    )
+
+                    confidence = (
+                        result["confidence"]
+                    )
+
+                    top_predictions = (
+                        result["top_predictions"]
+                    )
 
                     print(
                         "Predicted Class ID:",
-                        predicted_class
+                        result["class_id"]
                     )
 
                     print(
@@ -1043,10 +1124,7 @@ def home():
 
                     print(
                         "Confidence:",
-                        round(
-                            confidence,
-                            2
-                        ),
+                        confidence,
                         "%"
                     )
 
@@ -1054,7 +1132,7 @@ def home():
                         "Top 3 Predictions:"
                     )
 
-                    for index, result in enumerate(
+                    for index, item in enumerate(
                         top_predictions,
                         start=1
                     ):
@@ -1062,34 +1140,49 @@ def home():
                         print(
                             index,
                             ".",
-                            result["name"],
+                            item["name"],
                             "-",
-                            result["confidence"],
+                            item["confidence"],
                             "%"
                         )
 
                     print(
-                        "==============================\n"
+                        "=============================================="
                     )
 
-    # ================================
-    # SEND DATA TO HTML
-    # ================================
+    except Exception as error:
+
+        print()
+        print(
+            "=============================================="
+        )
+
+        print(
+            "ERROR DURING IMAGE PROCESSING"
+        )
+
+        print(
+            str(error)
+        )
+
+        traceback.print_exc()
+
+        print(
+            "=============================================="
+        )
+
+        error_message = (
+            "An error occurred while processing the image. "
+            "Please try another image."
+        )
 
     return render_template(
 
-        "Index.html",
+        "index.html",
 
         predicted_name=predicted_name,
 
-        confidence=(
-            round(
-                confidence,
-                2
-            )
-            if confidence is not None
-            else None
-        ),
+        confidence=confidence,
 
         image_filename=image_filename,
 
@@ -1102,9 +1195,9 @@ def home():
     )
 
 
-# ================================
-# 17. LIVE CAMERA DETECTION API
-# ================================
+# ============================================================
+# 20. LIVE CAMERA DETECTION API
+# ============================================================
 
 @app.route(
     "/detect",
@@ -1112,201 +1205,288 @@ def home():
 )
 def detect():
 
-    # ============================
-    # CHECK FRAME
-    # ============================
+    try:
 
-    if "image" not in request.files:
+        if "image" not in request.files:
 
-        return {
-            "detected": False,
-            "message": "No camera frame received."
-        }
+            return {
 
-    image_file = request.files["image"]
+                "detected":
+                    False,
 
-    # ============================
-    # READ IMAGE BYTES
-    # ============================
+                "message":
+                    "No camera frame received."
+            }
 
-    image_bytes = image_file.read()
-
-    # ============================
-    # CONVERT TO NUMPY ARRAY
-    # ============================
-
-    image_array = np.frombuffer(
-        image_bytes,
-        np.uint8
-    )
-
-    # ============================
-    # DECODE IMAGE
-    # ============================
-
-    frame = cv2.imdecode(
-        image_array,
-        cv2.IMREAD_COLOR
-    )
-
-    # ============================
-    # CHECK IMAGE
-    # ============================
-
-    if frame is None:
-
-        return {
-            "detected": False,
-            "message": "Invalid camera frame."
-        }
-
-    # ============================
-    # YOLO DETECTION
-    # ============================
-
-    detection = detect_traffic_sign(
-        frame
-    )
-
-    # ============================
-    # NO TRAFFIC SIGN
-    # ============================
-
-    if detection is None:
-
-        return {
-            "detected": False,
-            "message": "No traffic sign detected."
-        }
-
-    # ============================
-    # GET DETECTED CROP
-    # ============================
-
-    crop = detection["crop"]
-
-    # ============================
-    # SAVE DETECTED CROP
-    # ============================
-
-    crop_filename = (
-        f"live_sign_{int(time.time() * 1000)}.jpg"
-    )
-
-    crop_path = os.path.join(
-        UPLOAD_FOLDER,
-        crop_filename
-    )
-
-    cv2.imwrite(
-        crop_path,
-        crop
-    )
-
-    # ============================
-    # YOLO INFORMATION
-    # ============================
-
-    yolo_class_id = int(
-        detection["class_id"]
-    )
-
-    yolo_confidence = float(
-        detection["confidence"]
-    )
-
-    # ============================
-    # PREPARE CROP FOR CNN
-    # ============================
-
-    crop = cv2.resize(
-        crop,
-        (32, 32),
-        interpolation=cv2.INTER_AREA
-    )
-
-    crop = crop.astype(
-        "float32"
-    ) / 255.0
-
-    crop = crop.reshape(
-        1,
-        32,
-        32,
-        3
-    )
-
-    # ============================
-    # CNN PREDICTION
-    # ============================
-
-    prediction = model.predict(
-        crop,
-        verbose=0
-    )[0]
-
-    predicted_class = int(
-        np.argmax(
-            prediction
+        image_file = (
+            request.files["image"]
         )
-    )
 
-    predicted_name = classes[
-        str(predicted_class)
-    ]
+        image_bytes = (
+            image_file.read()
+        )
 
-    cnn_confidence = float(
-        prediction[
-            predicted_class
-        ] * 100
-    )
+        image_array = np.frombuffer(
+            image_bytes,
+            np.uint8
+        )
 
-    # ============================
-    # RETURN RESULT TO JAVASCRIPT
-    # ============================
+        frame = cv2.imdecode(
+            image_array,
+            cv2.IMREAD_COLOR
+        )
 
-    x1, y1, x2, y2 = detection["box"]
+        if frame is None:
+
+            return {
+
+                "detected":
+                    False,
+
+                "message":
+                    "Invalid camera frame."
+            }
+
+        detection = (
+            detect_traffic_sign(
+                frame
+            )
+        )
+
+        if detection is None:
+
+            return {
+
+                "detected":
+                    False,
+
+                "message":
+                    "No traffic sign detected."
+            }
+
+        crop = detection[
+            "crop"
+        ]
+
+        crop_filename = (
+            f"live_sign_"
+            f"{int(time.time() * 1000)}.jpg"
+        )
+
+        crop_path = os.path.join(
+            UPLOAD_FOLDER,
+            crop_filename
+        )
+
+        cv2.imwrite(
+            crop_path,
+            crop
+        )
+
+        yolo_class_id = int(
+            detection[
+                "class_id"
+            ]
+        )
+
+        yolo_confidence = float(
+            detection[
+                "confidence"
+            ]
+        )
+
+        result = classify_image(
+            crop
+        )
+
+        predicted_name = (
+            result["name"]
+        )
+
+        cnn_confidence = (
+            result["confidence"]
+        )
+
+        x1, y1, x2, y2 = (
+            detection["box"]
+        )
+
+        return {
+
+            "detected":
+                True,
+
+            "yolo_class_id":
+                yolo_class_id,
+
+            "yolo_confidence":
+                round(
+                    yolo_confidence * 100,
+                    2
+                ),
+
+            "sign":
+                predicted_name,
+
+            "cnn_confidence":
+                cnn_confidence,
+
+            "box": [
+                x1,
+                y1,
+                x2,
+                y2
+            ],
+
+            "image":
+                f"/uploads/{crop_filename}"
+        }
+
+    except Exception as error:
+
+        print()
+        print(
+            "=============================================="
+        )
+
+        print(
+            "LIVE DETECTION ERROR"
+        )
+
+        print(
+            str(error)
+        )
+
+        traceback.print_exc()
+
+        print(
+            "=============================================="
+        )
+
+        return {
+
+            "detected":
+                False,
+
+            "message":
+                "Detection error occurred."
+        }, 500
+
+
+# ============================================================
+# 21. HEALTH CHECK
+# ============================================================
+
+@app.route(
+    "/health"
+)
+def health():
 
     return {
 
-        "detected": True,
+        "status":
+            "ok",
 
-        "yolo_class_id": yolo_class_id,
+        "cnn":
+            "loaded",
 
-        "yolo_confidence": round(
-            yolo_confidence * 100,
-            2
-        ),
+        "yolo":
+            "loaded",
 
-        "sign": predicted_name,
-
-        "cnn_confidence": round(
-            cnn_confidence,
-            2
-        ),
-
-        "box": [
-            x1,
-            y1,
-            x2,
-            y2
-        ],
-
-        "image": (
-            f"/uploads/{crop_filename}"
-        )
-
+        "classes":
+            len(classes)
     }
 
 
-# ================================
-# RUN FLASK APPLICATION
-# ================================
+# ============================================================
+# 22. ERROR HANDLERS
+# ============================================================
+
+@app.errorhandler(
+    413
+)
+def file_too_large(error):
+
+    return render_template(
+
+        "index.html",
+
+        predicted_name=None,
+
+        confidence=None,
+
+        image_filename=None,
+
+        top_predictions=[],
+
+        error_message=(
+            "Image is too large. "
+            "Maximum allowed size is 10 MB."
+        ),
+
+        blur_warning=None
+
+    ), 413
+
+
+@app.errorhandler(
+    500
+)
+def internal_server_error(error):
+
+    print()
+    print(
+        "=============================================="
+    )
+
+    print(
+        "FLASK INTERNAL SERVER ERROR"
+    )
+
+    print(
+        str(error)
+    )
+
+    traceback.print_exc()
+
+    print(
+        "=============================================="
+    )
+
+    return render_template(
+
+        "index.html",
+
+        predicted_name=None,
+
+        confidence=None,
+
+        image_filename=None,
+
+        top_predictions=[],
+
+        error_message=(
+            "Something went wrong on the server. "
+            "Please try again."
+        ),
+
+        blur_warning=None
+
+    ), 500
+
+
+# ============================================================
+# 23. RUN APPLICATION
+# ============================================================
 
 if __name__ == "__main__":
 
     app.run(
-        debug=True,
+
         host="127.0.0.1",
-        port=5000
+
+        port=5000,
+
+        debug=True
+
     )
