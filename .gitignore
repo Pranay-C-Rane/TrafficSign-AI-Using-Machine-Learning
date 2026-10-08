@@ -1,0 +1,16 @@
+.venv/
+pytorch_env/
+__pycache__/
+.ipynb_checkpoints/
+
+# Large dataset images
+DataSet/Train/
+DataSet/Test/
+DataSet/GTSRB/Final_Training/Images/
+DataSet/GTSRB/Final_Test/Images/
+
+# Uploaded images
+WebApp/Uploads/*
+
+# Temporary LibreOffice lock files
+*.~lock.*

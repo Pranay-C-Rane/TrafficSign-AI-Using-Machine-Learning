@@ -1,0 +1,3626 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>TrafficSign AI</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='Style.css') }}">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+
+<body>
+
+
+<!-- ==================== HEADER ==================== -->
+
+<header class="header">
+
+    <div class="logo">
+
+        <span class="logo-icon">🚦</span>
+
+        <span>
+            TrafficSign <b>AI</b>
+        </span>
+
+    </div>
+
+
+    <nav class="navigation">
+
+        <a href="#home">Home</a>
+
+        <a href="#dashboard">Dashboard</a>
+
+        <a href="#history">History</a>
+
+        <a href="#how-it-works">How It Works</a>
+
+        <a href="#about">About</a>
+
+
+        <button type="button"
+                id="themeToggle"
+                class="theme-toggle"
+                aria-label="Toggle dark mode">
+
+            <span class="theme-icon">🌙</span>
+            <span class="theme-text">Dark</span>
+
+        </button>
+
+    </nav>
+
+</header>
+
+
+
+<!-- ==================== HERO ==================== -->
+
+<section class="hero" id="home">
+
+    <div class="hero-container">
+
+
+        <div class="hero-content">
+
+            <div class="eyebrow">
+
+                AI-POWERED TRAFFIC SIGN RECOGNITION
+
+            </div>
+
+
+            <h1>
+
+                Recognize Traffic Signs
+
+                <span>Quickly & Accurately</span>
+
+            </h1>
+
+
+            <p class="hero-description">
+
+                Upload a traffic sign image or use your camera
+                and let our AI models identify the sign automatically.
+
+            </p>
+
+
+            <div class="hero-buttons">
+
+                <a href="#classifier"
+                   class="primary-button">
+
+                    Start Prediction →
+
+                </a>
+
+
+                <a href="#how-it-works"
+                   class="outline-button">
+
+                    Learn How It Works
+
+                </a>
+
+            </div>
+
+
+            <div class="hero-stats">
+
+                <div class="hero-stat">
+
+                    <strong>43</strong>
+
+                    <span>Sign Classes</span>
+
+                </div>
+
+
+                <div class="hero-stat">
+
+                    <strong>39,209</strong>
+
+                    <span>Training Images</span>
+
+                </div>
+
+
+                <div class="hero-stat">
+
+                    <strong>94.20%</strong>
+
+                    <span>Test Accuracy</span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="hero-visual">
+
+            <div class="visual-card">
+
+                <div class="visual-header">
+
+                    <span class="status-dot"></span>
+
+                    CNN CLASSIFICATION
+
+                </div>
+
+
+                <div class="visual-sign">
+
+                    🚸
+
+                </div>
+
+
+                <div class="visual-line"></div>
+
+
+                <div class="visual-result">
+
+                    <div>
+
+                        <small>MODEL STATUS</small>
+
+                        <strong>Ready to Predict</strong>
+
+                    </div>
+
+
+                    <span class="ready-badge">
+
+                        READY
+
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- ==================== CLASSIFIER ==================== -->
+
+<section class="classifier-section" id="classifier">
+
+    <div class="section-heading">
+
+        <span class="section-label">
+
+            TRAFFIC SIGN CLASSIFIER
+
+        </span>
+
+
+        <h2>
+
+            Upload Your Traffic Sign
+
+        </h2>
+
+
+        <p>
+
+            Select an image, preview it and continue to the CNN prediction.
+
+        </p>
+
+    </div>
+
+
+
+    {% if error_message %}
+
+    <p id="predictionError"
+       class="prediction-error"
+       role="alert"
+       aria-live="polite">
+
+        ⚠ {{ error_message }}
+
+    </p>
+
+    {% else %}
+
+    <p id="predictionError"
+       class="prediction-error hidden"
+       role="alert"
+       aria-live="polite">
+
+    </p>
+
+    {% endif %}
+
+
+
+    <form method="POST"
+          enctype="multipart/form-data"
+          id="predictionForm">
+
+
+        <div class="upload-card"
+             id="uploadCard">
+
+
+            <div id="uploadArea"
+                 class="upload-area">
+
+
+                <div class="upload-icon">
+
+                    ↑
+
+                </div>
+
+
+                <h3>
+
+                    Drop your traffic sign image here
+
+                </h3>
+
+
+                <p>
+
+                    or choose an image from your device
+
+                </p>
+
+
+                <input type="file"
+                       name="image"
+                       id="imageInput"
+                       accept="image/*"
+                       hidden
+                       required>
+
+
+                <div class="upload-buttons">
+
+                    <label for="imageInput"
+                           class="primary-button">
+
+                        Choose Image
+
+                    </label>
+
+
+                    <button type="button"
+                            id="openCameraButton"
+                            class="camera-button">
+
+                        📷 Live Camera
+
+                    </button>
+
+                </div>
+
+
+                <small>
+
+                    Supported image formats: JPG, JPEG, PNG
+
+                </small>
+
+            </div>
+
+
+
+            <div id="previewArea"
+                 class="preview-area hidden">
+
+
+                <div class="preview-title">
+
+                    <span class="success-icon">
+
+                        ✓
+
+                    </span>
+
+                    Image Ready
+
+                </div>
+
+
+                <img id="imagePreview"
+                     src=""
+                     alt="Selected traffic sign">
+
+
+                <p id="fileName"></p>
+
+
+                <div class="preview-actions">
+
+                    <button type="button"
+                            id="changeButton"
+                            class="secondary-button">
+
+                        Change Image
+
+                    </button>
+
+
+                    <button type="button"
+                            id="removeButton"
+                            class="secondary-button">
+
+                        Remove
+
+                    </button>
+
+                </div>
+
+
+
+                <button type="submit"
+                        id="predictButton"
+                        class="predict-button">
+
+
+                    <span class="predict-button-text">
+
+                        Continue to Prediction →
+
+                    </span>
+
+
+                    <span class="predict-loading hidden">
+
+                        <span class="loading-spinner"></span>
+
+                        Analyzing Image...
+
+                    </span>
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </form>
+
+</section>
+
+
+
+<!-- ==================== LIVE CAMERA MODAL ==================== -->
+
+<div class="camera-modal hidden"
+     id="cameraModal">
+
+
+    <div class="camera-box">
+
+
+        <div class="camera-header">
+
+
+            <div>
+
+                <span class="section-label">
+
+                    LIVE AI CAMERA
+
+                </span>
+
+
+                <h2>
+
+                    Automatic Traffic Sign Detection
+
+                </h2>
+
+            </div>
+
+
+            <button type="button"
+                    id="closeCameraButton"
+                    class="close-button">
+
+                ×
+
+            </button>
+
+        </div>
+
+
+
+        <!-- CAMERA VIEW -->
+
+        <div id="cameraViewContainer"
+             style="
+                position: relative;
+                width: 100%;
+                overflow: hidden;
+                border-radius: 16px;
+             ">
+
+
+            <video id="cameraVideo"
+                   autoplay
+                   playsinline
+                   muted
+                   style="
+                       display: block;
+                       width: 100%;
+                       height: auto;
+                   ">
+
+            </video>
+
+
+
+            <!-- Detection overlay -->
+
+            <canvas id="detectionCanvas"
+                    style="
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                        height: 100%;
+                        pointer-events: none;
+                    ">
+
+            </canvas>
+
+        </div>
+
+
+
+        <!-- Hidden processing canvas -->
+
+        <canvas id="cameraCanvas"
+                hidden>
+
+        </canvas>
+
+
+
+        <!-- LIVE RESULT -->
+
+        <div id="liveDetectionResult"
+             style="
+                margin-top: 18px;
+                padding: 16px;
+                border-radius: 14px;
+                background: rgba(36, 99, 168, 0.08);
+                text-align: center;
+             ">
+
+
+            <strong id="liveDetectionTitle">
+
+                Waiting for traffic sign...
+
+            </strong>
+
+
+            <p id="liveDetectionText"
+               style="margin: 8px 0 0;">
+
+                Point the camera toward a traffic sign.
+
+            </p>
+
+        </div>
+
+
+
+        <div class="camera-actions">
+
+
+            <button type="button"
+                    id="stopCameraButton"
+                    class="secondary-button">
+
+                Stop Camera
+
+            </button>
+
+        </div>
+
+
+        <p id="cameraMessage">
+
+            Allow camera access when your browser asks.
+
+        </p>
+
+    </div>
+
+</div>
+
+
+
+<!-- ==================== RESULT ==================== -->
+
+{% if predicted_name %}
+
+<section class="result-section"
+         id="result">
+
+
+    <div class="section-heading">
+
+
+        <span class="section-label">
+
+            PREDICTION COMPLETE
+
+        </span>
+
+
+        <h2>
+
+            Traffic Sign Result
+
+        </h2>
+
+
+        <p>
+
+            The CNN model has analyzed your image.
+
+        </p>
+
+    </div>
+
+
+
+    <div class="result-card">
+
+
+        <div class="result-image-area">
+
+
+            <span class="result-image-label">
+
+                ANALYZED IMAGE
+
+            </span>
+
+
+            <img src="{{ url_for('uploaded_file', filename=image_filename) }}"
+                 alt="Analyzed traffic sign">
+
+        </div>
+
+
+
+        <div class="result-information">
+
+
+            <span class="result-label">
+
+                PREDICTED TRAFFIC SIGN
+
+            </span>
+
+
+            <h2>
+
+                {{ predicted_name }}
+
+            </h2>
+
+
+            <div class="confidence-row">
+
+
+                <span>
+
+                    Confidence
+
+                </span>
+
+
+                <strong>
+
+                    {{ confidence }}%
+
+                </strong>
+
+            </div>
+
+
+
+            <div class="confidence-bar">
+
+
+                <div class="confidence-progress"
+                     style="--confidence: {{ confidence }}%;">
+
+                </div>
+
+            </div>
+
+
+
+            <p class="confidence-message">
+
+
+                {% if confidence >= 90 %}
+
+                    ✓ High confidence prediction
+
+                {% elif confidence >= 70 %}
+
+                    ✓ Good confidence prediction
+
+                {% else %}
+
+                    ! Lower confidence prediction
+
+                {% endif %}
+
+            </p>
+
+
+
+            <div class="result-info-box">
+
+
+                <strong>
+
+                    What does this mean?
+
+                </strong>
+
+
+                <p>
+
+                    The confidence value represents the probability
+                    assigned by the CNN model to its top predicted class.
+
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- TOP 3 PREDICTIONS -->
+
+    <div class="top-predictions-card">
+
+
+        <div class="top-heading">
+
+
+            <div>
+
+                <span class="section-label">
+
+                    MODEL OUTPUT
+
+                </span>
+
+
+                <h2>
+
+                    Top 3 Predictions
+
+                </h2>
+
+            </div>
+
+
+            <p>
+
+                Most likely classes identified by the CNN.
+
+            </p>
+
+        </div>
+
+
+
+        <div class="prediction-list">
+
+
+            {% for result in top_predictions %}
+
+            <div class="prediction-item">
+
+
+                <div class="rank">
+
+
+                    {% if loop.index == 1 %}
+
+                        01
+
+                    {% elif loop.index == 2 %}
+
+                        02
+
+                    {% else %}
+
+                        03
+
+                    {% endif %}
+
+                </div>
+
+
+
+                <div class="prediction-details">
+
+
+                    <strong>
+
+                        {{ result.name }}
+
+                    </strong>
+
+
+                    <div class="mini-bar">
+
+
+                        <div class="mini-progress"
+                             style="--confidence: {{ result.confidence }}%;">
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                <strong class="prediction-percentage">
+
+                    {{ result.confidence }}%
+
+                </strong>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+
+
+    <div class="result-actions">
+
+
+        <a href="#classifier"
+           class="analyze-button">
+
+            Analyze Another Image →
+
+        </a>
+
+
+        <a href="/"
+           class="reset-button">
+
+            ↻ Reset
+
+        </a>
+
+    </div>
+
+</section>
+
+{% endif %}
+
+
+
+<!-- ==================== DASHBOARD ==================== -->
+
+<section class="dashboard-section"
+         id="dashboard">
+
+
+    <div class="section-heading">
+
+
+        <span class="section-label">
+
+            DASHBOARD
+
+        </span>
+
+
+        <h2>
+
+            Prediction Overview
+
+        </h2>
+
+
+        <p>
+
+            A quick summary of your prediction activity.
+
+        </p>
+
+    </div>
+
+
+
+    <div class="dashboard-grid">
+
+
+        <div class="dashboard-card">
+
+            <div class="dashboard-icon">
+
+                #
+
+            </div>
+
+
+            <span>
+
+                TOTAL PREDICTIONS
+
+            </span>
+
+
+            <strong id="totalPredictions">
+
+                0
+
+            </strong>
+
+        </div>
+
+
+
+        <div class="dashboard-card">
+
+            <div class="dashboard-icon">
+
+                ✓
+
+            </div>
+
+
+            <span>
+
+                HIGH CONFIDENCE
+
+            </span>
+
+
+            <strong id="highConfidence">
+
+                0
+
+            </strong>
+
+        </div>
+
+
+
+        <div class="dashboard-card">
+
+            <div class="dashboard-icon">
+
+                %
+
+            </div>
+
+
+            <span>
+
+                AVERAGE CONFIDENCE
+
+            </span>
+
+
+            <strong id="averageConfidence">
+
+                0%
+
+            </strong>
+
+        </div>
+
+
+
+        <div class="dashboard-card">
+
+            <div class="dashboard-icon">
+
+                ★
+
+            </div>
+
+
+            <span>
+
+                LATEST PREDICTION
+
+            </span>
+
+
+            <strong id="latestPrediction">
+
+                —
+
+            </strong>
+
+        </div>
+
+    </div>
+
+
+
+    <div class="dashboard-charts">
+
+
+        <div class="chart-card">
+
+
+            <div class="chart-heading">
+
+                <span class="section-label">
+
+                    ANALYTICS
+
+                </span>
+
+
+                <h3>
+
+                    Predictions by Traffic Sign
+
+                </h3>
+
+
+                <p>
+
+                    Number of times each traffic sign was predicted.
+
+                </p>
+
+            </div>
+
+
+            <div class="chart-wrapper">
+
+                <canvas id="signChart"></canvas>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="chart-card">
+
+
+            <div class="chart-heading">
+
+                <span class="section-label">
+
+                    ANALYTICS
+
+                </span>
+
+
+                <h3>
+
+                    Confidence Trend
+
+                </h3>
+
+
+                <p>
+
+                    Confidence score of your recent predictions.
+
+                </p>
+
+            </div>
+
+
+            <div class="chart-wrapper">
+
+                <canvas id="confidenceChart"></canvas>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="chart-card">
+
+
+            <div class="chart-heading">
+
+                <span class="section-label">
+
+                    ANALYTICS
+
+                </span>
+
+
+                <h3>
+
+                    Confidence Distribution
+
+                </h3>
+
+
+                <p>
+
+                    Distribution of predictions by confidence level.
+
+                </p>
+
+            </div>
+
+
+            <div class="chart-wrapper chart-wrapper-small">
+
+                <canvas id="confidenceDistributionChart"></canvas>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- ==================== HISTORY ==================== -->
+
+<section class="history-section"
+         id="history">
+
+
+    <div class="history-heading">
+
+
+        <div>
+
+
+            <span class="section-label">
+
+                PREDICTION HISTORY
+
+            </span>
+
+
+            <h2>
+
+                Recent Predictions
+
+            </h2>
+
+
+            <p>
+
+                Your previous predictions are stored locally in this browser.
+
+            </p>
+
+        </div>
+
+
+        <button type="button"
+                id="clearHistoryButton"
+                class="clear-button">
+
+            Clear History
+
+        </button>
+
+    </div>
+
+
+
+    <div id="historyList"
+         class="history-list">
+
+
+        <div class="empty-history">
+
+
+            <div>◷</div>
+
+
+            <h3>
+
+                No predictions yet
+
+            </h3>
+
+
+            <p>
+
+                Your prediction history will appear here.
+
+            </p>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- ==================== HOW IT WORKS ==================== -->
+
+<section class="how-section"
+         id="how-it-works">
+
+
+    <div class="section-heading">
+
+
+        <span class="section-label">
+
+            SIMPLE PROCESS
+
+        </span>
+
+
+        <h2>
+
+            How It Works
+
+        </h2>
+
+
+        <p>
+
+            Four simple steps from image to prediction.
+
+        </p>
+
+    </div>
+
+
+
+    <div class="steps">
+
+
+        <div class="step-card">
+
+
+            <span class="step-number">
+
+                01
+
+            </span>
+
+
+            <h3>
+
+                Upload or Scan
+
+            </h3>
+
+
+            <p>
+
+                Select an image or use the live camera
+                to scan a traffic sign.
+
+            </p>
+
+        </div>
+
+
+
+        <div class="step-card">
+
+
+            <span class="step-number">
+
+                02
+
+            </span>
+
+
+            <h3>
+
+                Object Detection
+
+            </h3>
+
+
+            <p>
+
+                YOLO detects the traffic sign and
+                identifies its location in the image.
+
+            </p>
+
+        </div>
+
+
+
+        <div class="step-card">
+
+
+            <span class="step-number">
+
+                03
+
+            </span>
+
+
+            <h3>
+
+                CNN Classification
+
+            </h3>
+
+
+            <p>
+
+                The detected sign is passed to the
+                trained CNN for 43-class classification.
+
+            </p>
+
+        </div>
+
+
+
+        <div class="step-card">
+
+
+            <span class="step-number">
+
+                04
+
+            </span>
+
+
+            <h3>
+
+                Prediction
+
+            </h3>
+
+
+            <p>
+
+                The predicted class, confidence and
+                detection box are displayed.
+
+            </p>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- ==================== ABOUT ==================== -->
+
+<section class="about-section"
+         id="about">
+
+
+    <div class="about-content">
+
+
+        <span class="section-label">
+
+            ABOUT THE PROJECT
+
+        </span>
+
+
+        <h2>
+
+            Traffic Sign Classification
+            Using Machine Learning
+
+        </h2>
+
+
+        <p>
+
+            TrafficSign AI is a machine-learning based
+            traffic sign classification system developed
+            using a Convolutional Neural Network.
+
+            The system is trained to classify traffic signs
+            into 43 different classes and uses YOLO-based
+            object detection for live traffic sign localization.
+
+        </p>
+
+
+
+        <div class="technology-list">
+
+
+            <span>Python</span>
+
+            <span>TensorFlow</span>
+
+            <span>Keras</span>
+
+            <span>YOLO</span>
+
+            <span>ONNX</span>
+
+            <span>OpenCV</span>
+
+            <span>Flask</span>
+
+            <span>HTML</span>
+
+            <span>CSS</span>
+
+            <span>JavaScript</span>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- ==================== FOOTER ==================== -->
+
+<footer>
+
+
+    <div class="footer-logo">
+
+        🚦 TrafficSign AI
+
+    </div>
+
+
+    <p>
+
+        Traffic Sign Classification Using Machine Learning
+
+    </p>
+
+
+    <span>
+
+        CNN • YOLO • Flask • TensorFlow • OpenCV
+
+    </span>
+
+</footer>
+
+
+
+<!-- ==================== JAVASCRIPT ==================== -->
+
+<script>
+
+
+/* =========================================================
+   DARK / LIGHT MODE
+   ========================================================= */
+
+const themeToggle =
+    document.getElementById("themeToggle");
+
+const themeIcon =
+    themeToggle.querySelector(".theme-icon");
+
+const themeText =
+    themeToggle.querySelector(".theme-text");
+
+
+const savedTheme =
+    localStorage.getItem("trafficSignTheme");
+
+
+if (savedTheme === "dark") {
+
+    document.body.classList.add("dark-mode");
+
+    themeIcon.textContent = "☀️";
+
+    themeText.textContent = "Light";
+
+}
+
+
+themeToggle.addEventListener("click", function() {
+
+    document.body.classList.toggle("dark-mode");
+
+
+    const darkMode =
+        document.body.classList.contains("dark-mode");
+
+
+    themeIcon.textContent =
+        darkMode ? "☀️" : "🌙";
+
+
+    themeText.textContent =
+        darkMode ? "Light" : "Dark";
+
+
+    localStorage.setItem(
+        "trafficSignTheme",
+        darkMode ? "dark" : "light"
+    );
+
+
+    const history =
+        JSON.parse(
+            localStorage.getItem("trafficSignHistory") || "[]"
+        );
+
+
+    updateCharts(history);
+
+});
+
+
+
+/* =========================================================
+   ELEMENTS
+   ========================================================= */
+
+const imageInput =
+    document.getElementById("imageInput");
+
+const uploadArea =
+    document.getElementById("uploadArea");
+
+const previewArea =
+    document.getElementById("previewArea");
+
+const imagePreview =
+    document.getElementById("imagePreview");
+
+const fileName =
+    document.getElementById("fileName");
+
+const changeButton =
+    document.getElementById("changeButton");
+
+const removeButton =
+    document.getElementById("removeButton");
+
+const predictionForm =
+    document.getElementById("predictionForm");
+
+const predictButton =
+    document.getElementById("predictButton");
+
+const predictButtonText =
+    document.querySelector(".predict-button-text");
+
+const predictLoading =
+    document.querySelector(".predict-loading");
+
+const predictionError =
+    document.getElementById("predictionError");
+
+const openCameraButton =
+    document.getElementById("openCameraButton");
+
+const cameraModal =
+    document.getElementById("cameraModal");
+
+const closeCameraButton =
+    document.getElementById("closeCameraButton");
+
+const stopCameraButton =
+    document.getElementById("stopCameraButton");
+
+const cameraVideo =
+    document.getElementById("cameraVideo");
+
+const cameraCanvas =
+    document.getElementById("cameraCanvas");
+
+const detectionCanvas =
+    document.getElementById("detectionCanvas");
+
+const cameraMessage =
+    document.getElementById("cameraMessage");
+
+const liveDetectionTitle =
+    document.getElementById("liveDetectionTitle");
+
+const liveDetectionText =
+    document.getElementById("liveDetectionText");
+
+const historyList =
+    document.getElementById("historyList");
+
+const clearHistoryButton =
+    document.getElementById("clearHistoryButton");
+
+
+
+/* =========================================================
+   ERROR MESSAGE
+   ========================================================= */
+
+function showPredictionError(message) {
+
+    if (!predictionError) {
+        return;
+    }
+
+    predictionError.textContent =
+        "⚠ " + message;
+
+    predictionError.classList.remove("hidden");
+
+}
+
+
+function hidePredictionError() {
+
+    if (!predictionError) {
+        return;
+    }
+
+    predictionError.textContent = "";
+
+    predictionError.classList.add("hidden");
+
+}
+
+
+
+/* =========================================================
+   CHART VARIABLES
+   ========================================================= */
+
+let signChart = null;
+
+let confidenceChart = null;
+
+let confidenceDistributionChart = null;
+
+
+
+/* =========================================================
+   IMAGE PREVIEW
+   ========================================================= */
+
+function showPreview(file) {
+
+    if (!file) {
+        return;
+    }
+
+    hidePredictionError();
+
+
+    const reader =
+        new FileReader();
+
+
+    reader.onload = function(event) {
+
+        imagePreview.src =
+            event.target.result;
+
+
+        fileName.textContent =
+            file.name;
+
+
+        uploadArea.classList.add("hidden");
+
+        previewArea.classList.remove("hidden");
+
+    };
+
+
+    reader.readAsDataURL(file);
+
+}
+
+
+
+/* =========================================================
+   FILE INPUT
+   ========================================================= */
+
+imageInput.addEventListener("change", function() {
+
+    hidePredictionError();
+
+    showPreview(this.files[0]);
+
+});
+
+
+
+/* =========================================================
+   DRAG AND DROP
+   ========================================================= */
+
+uploadArea.addEventListener("dragover", function(event) {
+
+    event.preventDefault();
+
+    uploadArea.classList.add("drag-active");
+
+});
+
+
+uploadArea.addEventListener("dragleave", function() {
+
+    uploadArea.classList.remove("drag-active");
+
+});
+
+
+uploadArea.addEventListener("drop", function(event) {
+
+    event.preventDefault();
+
+    uploadArea.classList.remove("drag-active");
+
+
+    const file =
+        event.dataTransfer.files[0];
+
+
+    if (
+        file &&
+        file.type.startsWith("image/")
+    ) {
+
+        hidePredictionError();
+
+        imageInput.files =
+            event.dataTransfer.files;
+
+        showPreview(file);
+
+    }
+
+    else {
+
+        showPredictionError(
+            "Please upload a valid image file."
+        );
+
+    }
+
+});
+
+
+
+/* =========================================================
+   CHANGE IMAGE
+   ========================================================= */
+
+changeButton.addEventListener("click", function() {
+
+    hidePredictionError();
+
+    imageInput.click();
+
+});
+
+
+
+/* =========================================================
+   REMOVE IMAGE
+   ========================================================= */
+
+removeButton.addEventListener("click", function() {
+
+    hidePredictionError();
+
+
+    imageInput.value = "";
+
+    imagePreview.src = "";
+
+    fileName.textContent = "";
+
+
+    previewArea.classList.add("hidden");
+
+    uploadArea.classList.remove("hidden");
+
+});
+
+
+
+/* =========================================================
+   LIVE CAMERA + AUTOMATIC YOLO DETECTION
+   ========================================================= */
+
+let cameraStream = null;
+
+let detectionTimer = null;
+
+let detectionRunning = false;
+
+let detectionBusy = false;
+
+
+/*
+   Prevent the same live prediction from being
+   added to History repeatedly.
+*/
+
+let lastLivePredictionName = "";
+
+let lastLivePredictionTime = 0;
+
+const LIVE_HISTORY_COOLDOWN = 3000;
+
+
+
+/* =========================================================
+   START CAMERA
+   ========================================================= */
+
+async function startCamera() {
+
+    try {
+
+        cameraStream =
+            await navigator.mediaDevices.getUserMedia({
+
+                video: {
+
+                    facingMode: {
+                        ideal: "environment"
+                    },
+
+                    width: {
+                        ideal: 1280
+                    },
+
+                    height: {
+                        ideal: 720
+                    }
+
+                },
+
+                audio: false
+
+            });
+
+
+        cameraVideo.srcObject =
+            cameraStream;
+
+
+        cameraModal.classList.remove("hidden");
+
+
+        cameraMessage.textContent =
+            "Live AI detection is starting...";
+
+
+        liveDetectionTitle.textContent =
+            "Scanning...";
+
+
+        liveDetectionText.textContent =
+            "Point the camera toward a traffic sign.";
+
+
+        cameraVideo.onloadedmetadata =
+            function() {
+
+                setupDetectionCanvas();
+
+                startLiveDetection();
+
+            };
+
+    }
+
+    catch(error) {
+
+        console.error(
+            "Camera error:",
+            error
+        );
+
+
+        cameraMessage.textContent =
+            "Unable to access the camera. Please check browser camera permission.";
+
+
+        cameraModal.classList.remove("hidden");
+
+    }
+
+}
+
+
+
+/* =========================================================
+   DETECTION CANVAS
+   ========================================================= */
+
+function setupDetectionCanvas() {
+
+    if (!cameraVideo.videoWidth) {
+        return;
+    }
+
+
+    detectionCanvas.width =
+        cameraVideo.videoWidth;
+
+
+    detectionCanvas.height =
+        cameraVideo.videoHeight;
+
+}
+
+
+
+/* =========================================================
+   CLEAR DETECTION BOX
+   ========================================================= */
+
+function clearDetectionBox() {
+
+    const context =
+        detectionCanvas.getContext("2d");
+
+
+    context.clearRect(
+        0,
+        0,
+        detectionCanvas.width,
+        detectionCanvas.height
+    );
+
+}
+
+
+
+/* =========================================================
+   DRAW DETECTION
+   ========================================================= */
+
+function drawDetection(result) {
+
+    const context =
+        detectionCanvas.getContext("2d");
+
+
+    context.clearRect(
+        0,
+        0,
+        detectionCanvas.width,
+        detectionCanvas.height
+    );
+
+
+    if (!result.detected) {
+        return;
+    }
+
+
+    const box =
+        result.box;
+
+
+    const x1 =
+        box[0];
+
+
+    const y1 =
+        box[1];
+
+
+    const x2 =
+        box[2];
+
+
+    const y2 =
+        box[3];
+
+
+    const boxWidth =
+        x2 - x1;
+
+
+    const boxHeight =
+        y2 - y1;
+
+
+    context.strokeStyle =
+        "#22c55e";
+
+
+    context.lineWidth =
+        5;
+
+
+    context.strokeRect(
+        x1,
+        y1,
+        boxWidth,
+        boxHeight
+    );
+
+
+
+    /* ---------- LABEL ---------- */
+
+    const label =
+        result.sign +
+        " • " +
+        result.cnn_confidence +
+        "%";
+
+
+    context.font =
+        "bold 18px Arial";
+
+
+    const textWidth =
+        context.measureText(label).width;
+
+
+    const labelHeight =
+        32;
+
+
+    context.fillStyle =
+        "#22c55e";
+
+
+    context.fillRect(
+        x1,
+        Math.max(0, y1 - labelHeight),
+        textWidth + 20,
+        labelHeight
+    );
+
+
+    context.fillStyle =
+        "#ffffff";
+
+
+    context.fillText(
+        label,
+        x1 + 10,
+        Math.max(22, y1 - 9)
+    );
+
+}
+
+
+
+/* =========================================================
+   SAVE LIVE CAMERA PREDICTION
+   ========================================================= */
+
+function saveLivePrediction(result) {
+
+    if (!result || !result.detected) {
+        return;
+    }
+
+
+    const currentTime =
+        Date.now();
+
+
+    const signName =
+        result.sign || "Unknown Traffic Sign";
+
+
+    /*
+       Prevent the same detected sign from being
+       stored continuously while the camera remains
+       pointed at it.
+    */
+
+    if (
+        signName === lastLivePredictionName &&
+        currentTime - lastLivePredictionTime <
+            LIVE_HISTORY_COOLDOWN
+    ) {
+
+        return;
+
+    }
+
+
+    lastLivePredictionName =
+        signName;
+
+
+    lastLivePredictionTime =
+        currentTime;
+
+
+    const history =
+        JSON.parse(
+            localStorage.getItem(
+                "trafficSignHistory"
+            ) || "[]"
+        );
+
+
+    history.unshift({
+
+        name:
+            signName,
+
+        confidence:
+            Number(
+                result.cnn_confidence || 0
+            ),
+
+        /* UPDATED: save the actual detected crop */
+
+        image:
+            result.image || "",
+
+        date:
+            new Date().toLocaleString(),
+
+        source:
+            "Live Camera"
+
+    });
+
+
+    localStorage.setItem(
+
+        "trafficSignHistory",
+
+        JSON.stringify(
+            history.slice(0, 20)
+        )
+
+    );
+
+
+    /*
+       Immediately refresh Dashboard
+       and History.
+    */
+
+    loadHistory();
+
+}
+
+
+
+/* =========================================================
+   SEND FRAME TO FLASK
+   ========================================================= */
+
+async function detectCurrentFrame() {
+
+    if (
+        !cameraStream ||
+        !detectionRunning ||
+        detectionBusy ||
+        cameraVideo.readyState < 2
+    ) {
+
+        return;
+
+    }
+
+
+    detectionBusy = true;
+
+
+    try {
+
+
+        cameraCanvas.width =
+            cameraVideo.videoWidth;
+
+
+        cameraCanvas.height =
+            cameraVideo.videoHeight;
+
+
+        const context =
+            cameraCanvas.getContext("2d");
+
+
+        context.drawImage(
+            cameraVideo,
+            0,
+            0,
+            cameraCanvas.width,
+            cameraCanvas.height
+        );
+
+
+
+        const blob =
+            await new Promise(function(resolve) {
+
+                cameraCanvas.toBlob(
+                    resolve,
+                    "image/jpeg",
+                    0.75
+                );
+
+            });
+
+
+
+        if (!blob) {
+
+            detectionBusy = false;
+
+            return;
+
+        }
+
+
+
+        const formData =
+            new FormData();
+
+
+        formData.append(
+            "image",
+            blob,
+            "camera_frame.jpg"
+        );
+
+
+
+        const response =
+            await fetch(
+                "/detect",
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
+
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Detection server returned " +
+                response.status
+            );
+
+        }
+
+
+
+        const result =
+            await response.json();
+
+
+
+        /* =================================================
+           RESULT
+           ================================================= */
+
+
+        if (result.detected) {
+
+
+            drawDetection(result);
+
+
+
+            liveDetectionTitle.textContent =
+                "🚦 " +
+                result.sign;
+
+
+
+            liveDetectionText.textContent =
+                "CNN Confidence: " +
+                result.cnn_confidence +
+                "%";
+
+
+
+            cameraMessage.textContent =
+                "Traffic sign detected automatically.";
+
+
+
+            saveLivePrediction(result);
+
+
+        }
+
+        else {
+
+
+            clearDetectionBox();
+
+
+            liveDetectionTitle.textContent =
+                "Scanning...";
+
+
+            liveDetectionText.textContent =
+                "No traffic sign detected.";
+
+
+            cameraMessage.textContent =
+                "Move the camera toward a traffic sign.";
+
+        }
+
+    }
+
+
+    catch(error) {
+
+
+        console.error(
+            "Live detection error:",
+            error
+        );
+
+
+        cameraMessage.textContent =
+            "Detection connection error. Check Flask.";
+
+    }
+
+
+    detectionBusy = false;
+
+}
+
+
+
+/* =========================================================
+   START LIVE DETECTION
+   ========================================================= */
+
+function startLiveDetection() {
+
+    stopLiveDetection();
+
+
+    detectionRunning = true;
+
+
+    detectCurrentFrame();
+
+
+    detectionTimer =
+        setInterval(
+            detectCurrentFrame,
+            700
+        );
+
+}
+
+
+
+/* =========================================================
+   STOP LIVE DETECTION
+   ========================================================= */
+
+function stopLiveDetection() {
+
+    detectionRunning = false;
+
+
+    if (detectionTimer) {
+
+        clearInterval(
+            detectionTimer
+        );
+
+        detectionTimer = null;
+
+    }
+
+
+    detectionBusy = false;
+
+
+    clearDetectionBox();
+
+}
+
+
+
+/* =========================================================
+   STOP CAMERA
+   ========================================================= */
+
+function stopCamera() {
+
+    stopLiveDetection();
+
+
+    if (cameraStream) {
+
+        cameraStream
+            .getTracks()
+            .forEach(
+                function(track) {
+
+                    track.stop();
+
+                }
+            );
+
+        cameraStream = null;
+
+    }
+
+
+    cameraVideo.srcObject = null;
+
+
+    clearDetectionBox();
+
+}
+
+
+
+/* =========================================================
+   OPEN CAMERA
+   ========================================================= */
+
+openCameraButton.addEventListener(
+    "click",
+    startCamera
+);
+
+
+
+/* =========================================================
+   CLOSE CAMERA
+   ========================================================= */
+
+closeCameraButton.addEventListener(
+    "click",
+    function() {
+
+        stopCamera();
+
+        cameraModal.classList.add("hidden");
+
+    }
+);
+
+
+
+/* =========================================================
+   STOP CAMERA BUTTON
+   ========================================================= */
+
+stopCameraButton.addEventListener(
+    "click",
+    function() {
+
+        stopCamera();
+
+
+        cameraMessage.textContent =
+            "Camera stopped.";
+
+
+        liveDetectionTitle.textContent =
+            "Camera stopped";
+
+
+        liveDetectionText.textContent =
+            "Start the camera again to continue.";
+
+    }
+);
+
+
+
+/* =========================================================
+   PREDICTION BUTTON
+   ========================================================= */
+
+predictionForm.addEventListener(
+    "submit",
+    function(event) {
+
+        event.preventDefault();
+
+
+        hidePredictionError();
+
+
+        if (
+            !imageInput.files ||
+            !imageInput.files.length
+        ) {
+
+            showPredictionError(
+                "Please select an image before prediction."
+            );
+
+
+            return;
+
+        }
+
+
+
+        predictButton.disabled =
+            true;
+
+
+        predictButton.classList.add(
+            "is-loading"
+        );
+
+
+        predictButtonText.classList.add(
+            "hidden"
+        );
+
+
+        predictLoading.classList.remove(
+            "hidden"
+        );
+
+
+
+        setTimeout(
+            function() {
+
+                predictionForm.submit();
+
+            },
+            850
+        );
+
+    }
+);
+
+
+
+/* =========================================================
+   SAVE UPLOAD PREDICTION
+   ========================================================= */
+
+function saveCurrentPrediction() {
+
+
+    const predictionName =
+        "{{ predicted_name|default('', true)|e }}";
+
+
+    const predictionConfidence =
+        "{{ confidence|default('', true) }}";
+
+
+    const predictionImage =
+        "{{ image_filename|default('', true)|e }}";
+
+
+
+    if (
+        !predictionName ||
+        !predictionConfidence ||
+        !predictionImage
+    ) {
+
+        return;
+
+    }
+
+
+
+    const saveKey =
+        "trafficSignLastSaved";
+
+
+    const currentKey =
+        predictionImage +
+        "|" +
+        predictionConfidence;
+
+
+
+    if (
+        sessionStorage.getItem(saveKey) === currentKey
+    ) {
+
+        return;
+
+    }
+
+
+
+    const history =
+        JSON.parse(
+            localStorage.getItem(
+                "trafficSignHistory"
+            ) || "[]"
+        );
+
+
+
+    history.unshift({
+
+        name:
+            predictionName,
+
+        confidence:
+            parseFloat(
+                predictionConfidence
+            ),
+
+        image:
+            "/uploads/" +
+            predictionImage,
+
+        date:
+            new Date().toLocaleString(),
+
+        source:
+            "Image Upload"
+
+    });
+
+
+
+    localStorage.setItem(
+
+        "trafficSignHistory",
+
+        JSON.stringify(
+            history.slice(0, 20)
+        )
+
+    );
+
+
+
+    sessionStorage.setItem(
+        saveKey,
+        currentKey
+    );
+
+}
+
+
+
+/* =========================================================
+   LOAD HISTORY
+   ========================================================= */
+
+function loadHistory() {
+
+
+    const history =
+        JSON.parse(
+            localStorage.getItem(
+                "trafficSignHistory"
+            ) || "[]"
+        );
+
+
+
+    updateDashboard(history);
+
+
+
+    if (!history.length) {
+
+
+        historyList.innerHTML = `
+
+            <div class="empty-history">
+
+                <div>◷</div>
+
+                <h3>No predictions yet</h3>
+
+                <p>
+                    Your prediction history will appear here.
+                </p>
+
+            </div>
+
+        `;
+
+
+        return;
+
+    }
+
+
+
+    historyList.innerHTML =
+        history.map(
+            function(item) {
+
+
+                const imageHTML =
+                    item.image
+
+                    ?
+
+                    `
+                    <img
+                        src="${item.image}"
+                        alt="Traffic sign"
+                    >
+                    `
+
+                    :
+
+                    `
+                    <div class="history-live-icon">
+                        📷
+                    </div>
+                    `;
+
+
+
+                const sourceHTML =
+                    item.source
+
+                    ?
+
+                    `
+                    <small>
+                        ${item.source}
+                    </small>
+                    `
+
+                    :
+
+                    "";
+
+
+
+                return `
+
+                    <div class="history-item">
+
+                        ${imageHTML}
+
+                        <div class="history-info">
+
+                            <strong>
+                                ${item.name}
+                            </strong>
+
+                            <span>
+                                ${item.date}
+                            </span>
+
+                            ${sourceHTML}
+
+                        </div>
+
+                        <div class="history-confidence">
+                            ${Number(item.confidence).toFixed(2)}%
+                        </div>
+
+                    </div>
+
+                `;
+
+            }
+        ).join("");
+
+}
+
+
+
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
+
+function updateDashboard(history) {
+
+
+    const total =
+        history.length;
+
+
+
+    const highConfidence =
+        history.filter(
+            item =>
+                Number(item.confidence) >= 90
+        ).length;
+
+
+
+    const average =
+        total
+
+            ?
+
+            history.reduce(
+                (sum, item) =>
+                    sum + Number(item.confidence || 0),
+                0
+            ) / total
+
+            :
+
+            0;
+
+
+
+    document.getElementById(
+        "totalPredictions"
+    ).textContent =
+        total;
+
+
+
+    document.getElementById(
+        "highConfidence"
+    ).textContent =
+        highConfidence;
+
+
+
+    document.getElementById(
+        "averageConfidence"
+    ).textContent =
+        average.toFixed(2) + "%";
+
+
+
+    document.getElementById(
+        "latestPrediction"
+    ).textContent =
+        total
+            ? history[0].name
+            : "—";
+
+
+
+    updateCharts(history);
+
+}
+
+
+
+/* =========================================================
+   CHART THEME
+   ========================================================= */
+
+function getChartTheme() {
+
+
+    const darkMode =
+        document.body.classList.contains(
+            "dark-mode"
+        );
+
+
+
+    return darkMode
+
+        ?
+
+        {
+
+            text:
+                "#e9d5ff",
+
+            grid:
+                "rgba(168, 85, 247, 0.18)",
+
+            border:
+                "#a855f7",
+
+            background:
+                "rgba(168, 85, 247, 0.22)"
+
+        }
+
+
+        :
+
+        {
+
+            text:
+                "#526174",
+
+            grid:
+                "rgba(100, 116, 139, 0.15)",
+
+            border:
+                "#2463a8",
+
+            background:
+                "rgba(36, 99, 168, 0.20)"
+
+        };
+
+}
+
+
+
+/* =========================================================
+   DASHBOARD CHARTS
+   ========================================================= */
+
+function updateCharts(history) {
+
+
+    const signCanvas =
+        document.getElementById(
+            "signChart"
+        );
+
+
+    const confidenceCanvas =
+        document.getElementById(
+            "confidenceChart"
+        );
+
+
+    const distributionCanvas =
+        document.getElementById(
+            "confidenceDistributionChart"
+        );
+
+
+
+    if (
+        !signCanvas ||
+        !confidenceCanvas ||
+        !distributionCanvas ||
+        typeof Chart === "undefined"
+    ) {
+
+        return;
+
+    }
+
+
+
+    const theme =
+        getChartTheme();
+
+
+
+    if (signChart) {
+        signChart.destroy();
+    }
+
+
+    if (confidenceChart) {
+        confidenceChart.destroy();
+    }
+
+
+    if (confidenceDistributionChart) {
+        confidenceDistributionChart.destroy();
+    }
+
+
+
+    /* =====================================================
+       GRAPH 1 — PREDICTIONS BY SIGN
+       ===================================================== */
+
+    const signCounts = {};
+
+
+
+    history.forEach(
+        function(item) {
+
+            signCounts[item.name] =
+                (
+                    signCounts[item.name] ||
+                    0
+                ) + 1;
+
+        }
+    );
+
+
+
+    signChart =
+        new Chart(
+            signCanvas,
+            {
+
+                type:
+                    "bar",
+
+                data:
+                    {
+
+                        labels:
+                            Object.keys(
+                                signCounts
+                            ),
+
+                        datasets:
+                            [{
+
+                                label:
+                                    "Predictions",
+
+                                data:
+                                    Object.values(
+                                        signCounts
+                                    ),
+
+                                borderWidth:
+                                    1,
+
+                                backgroundColor:
+                                    theme.background,
+
+                                borderColor:
+                                    theme.border
+
+                            }]
+
+                    },
+
+                options:
+                    {
+
+                        responsive:
+                            true,
+
+                        maintainAspectRatio:
+                            false,
+
+                        indexAxis:
+                            "y",
+
+                        plugins:
+                            {
+
+                                legend:
+                                    {
+                                        display:
+                                            false
+                                    }
+
+                            },
+
+                        scales:
+                            {
+
+                                x:
+                                    {
+
+                                        beginAtZero:
+                                            true,
+
+                                        ticks:
+                                            {
+
+                                                precision:
+                                                    0,
+
+                                                color:
+                                                    theme.text
+
+                                            },
+
+                                        grid:
+                                            {
+
+                                                color:
+                                                    theme.grid
+
+                                            }
+
+                                    },
+
+                                y:
+                                    {
+
+                                        ticks:
+                                            {
+
+                                                color:
+                                                    theme.text
+
+                                            },
+
+                                        grid:
+                                            {
+
+                                                color:
+                                                    theme.grid
+
+                                            }
+
+                                    }
+
+                            }
+
+                    }
+
+            }
+        );
+
+
+
+    /* =====================================================
+       GRAPH 2 — CONFIDENCE TREND
+       ===================================================== */
+
+    const recentHistory =
+        history
+            .slice(0, 10)
+            .reverse();
+
+
+
+    const confidenceLabels =
+        recentHistory.map(
+            function(item, index) {
+
+                return "Prediction " +
+                       (index + 1);
+
+            }
+        );
+
+
+
+    const confidenceValues =
+        recentHistory.map(
+            function(item) {
+
+                return Number(
+                    item.confidence
+                );
+
+            }
+        );
+
+
+
+    let confidenceMin =
+        0;
+
+
+
+    if (confidenceValues.length) {
+
+
+        const minimumValue =
+            Math.min(
+                ...confidenceValues
+            );
+
+
+
+        if (minimumValue >= 90) {
+
+            confidenceMin =
+                90;
+
+        }
+
+        else if (minimumValue >= 80) {
+
+            confidenceMin =
+                80;
+
+        }
+
+        else if (minimumValue >= 70) {
+
+            confidenceMin =
+                70;
+
+        }
+
+    }
+
+
+
+    confidenceChart =
+        new Chart(
+            confidenceCanvas,
+            {
+
+                type:
+                    "line",
+
+                data:
+                    {
+
+                        labels:
+                            confidenceLabels,
+
+                        datasets:
+                            [{
+
+                                label:
+                                    "Confidence (%)",
+
+                                data:
+                                    confidenceValues,
+
+                                tension:
+                                    0.3,
+
+                                fill:
+                                    false,
+
+                                borderWidth:
+                                    2,
+
+                                pointRadius:
+                                    4,
+
+                                pointHoverRadius:
+                                    6,
+
+                                borderColor:
+                                    theme.border,
+
+                                pointBackgroundColor:
+                                    theme.border
+
+                            }]
+
+                    },
+
+                options:
+                    {
+
+                        responsive:
+                            true,
+
+                        maintainAspectRatio:
+                            false,
+
+                        interaction:
+                            {
+
+                                intersect:
+                                    false,
+
+                                mode:
+                                    "index"
+
+                            },
+
+                        plugins:
+                            {
+
+                                legend:
+                                    {
+
+                                        labels:
+                                            {
+
+                                                color:
+                                                    theme.text
+
+                                            }
+
+                                    },
+
+                                tooltip:
+                                    {
+
+                                        callbacks:
+                                            {
+
+                                                label:
+                                                    function(context) {
+
+                                                        return " Confidence: " +
+                                                               Number(context.parsed.y).toFixed(2) +
+                                                               "%";
+
+                                                    }
+
+                                            }
+
+                                    }
+
+                            },
+
+                        scales:
+                            {
+
+                                x:
+                                    {
+
+                                        ticks:
+                                            {
+
+                                                color:
+                                                    theme.text
+
+                                            },
+
+                                        grid:
+                                            {
+
+                                                color:
+                                                    theme.grid
+
+                                            }
+
+                                    },
+
+                                y:
+                                    {
+
+                                        min:
+                                            confidenceMin,
+
+                                        max:
+                                            100,
+
+                                        ticks:
+                                            {
+
+                                                color:
+                                                    theme.text,
+
+                                                callback:
+                                                    function(value) {
+
+                                                        return value + "%";
+
+                                                    }
+
+                                            },
+
+                                        grid:
+                                            {
+
+                                                color:
+                                                    theme.grid
+
+                                            }
+
+                                    }
+
+                            }
+
+                    }
+
+            }
+        );
+
+
+
+    /* =====================================================
+       GRAPH 3 — CONFIDENCE DISTRIBUTION
+       ===================================================== */
+
+    let highCount =
+        0;
+
+
+    let goodCount =
+        0;
+
+
+    let lowCount =
+        0;
+
+
+
+    history.forEach(
+        function(item) {
+
+
+            const confidence =
+                Number(item.confidence || 0);
+
+
+
+            if (confidence >= 90) {
+
+                highCount++;
+
+            }
+
+            else if (confidence >= 70) {
+
+                goodCount++;
+
+            }
+
+            else {
+
+                lowCount++;
+
+            }
+
+        }
+    );
+
+
+
+    const darkMode =
+        document.body.classList.contains(
+            "dark-mode"
+        );
+
+
+
+    confidenceDistributionChart =
+        new Chart(
+            distributionCanvas,
+            {
+
+                type:
+                    "doughnut",
+
+                data:
+                    {
+
+                        labels:
+                            [
+
+                                "High (90%+)",
+
+                                "Good (70–89%)",
+
+                                "Low (<70%)"
+
+                            ],
+
+                        datasets:
+                            [{
+
+                                data:
+                                    [
+
+                                        highCount,
+
+                                        goodCount,
+
+                                        lowCount
+
+                                    ],
+
+                                backgroundColor:
+                                    darkMode
+
+                                    ?
+
+                                    [
+
+                                        "#8b5cf6",
+
+                                        "#c084fc",
+
+                                        "#6d28d9"
+
+                                    ]
+
+                                    :
+
+                                    [
+
+                                        "#2463a8",
+
+                                        "#5b8fc5",
+
+                                        "#94a3b8"
+
+                                    ],
+
+                                borderColor:
+                                    darkMode
+
+                                    ?
+
+                                    "#09090b"
+
+                                    :
+
+                                    "#ffffff",
+
+                                borderWidth:
+                                    3
+
+                            }]
+
+                    },
+
+                options:
+                    {
+
+                        responsive:
+                            true,
+
+                        maintainAspectRatio:
+                            false,
+
+                        cutout:
+                            "65%",
+
+                        plugins:
+                            {
+
+                                legend:
+                                    {
+
+                                        position:
+                                            "bottom",
+
+                                        labels:
+                                            {
+
+                                                color:
+                                                    theme.text,
+
+                                                padding:
+                                                    18
+
+                                            }
+
+                                    }
+
+                            }
+
+                    }
+
+            }
+        );
+
+}
+
+
+
+/* =========================================================
+   CLEAR HISTORY
+   ========================================================= */
+
+clearHistoryButton.addEventListener(
+    "click",
+    function() {
+
+
+        if (
+            confirm(
+                "Are you sure you want to clear prediction history?"
+            )
+        ) {
+
+
+            localStorage.removeItem(
+                "trafficSignHistory"
+            );
+
+
+            lastLivePredictionName =
+                "";
+
+
+            lastLivePredictionTime =
+                0;
+
+
+            loadHistory();
+
+        }
+
+    }
+);
+
+
+
+/* =========================================================
+   PAGE LOAD
+   ========================================================= */
+
+window.addEventListener(
+    "load",
+    function() {
+
+
+        saveCurrentPrediction();
+
+
+        loadHistory();
+
+
+
+        const resultSection =
+            document.getElementById(
+                "result"
+            );
+
+
+
+        if (resultSection) {
+
+
+            setTimeout(
+                function() {
+
+
+                    resultSection.classList.add(
+                        "result-visible"
+                    );
+
+
+                    resultSection.scrollIntoView({
+
+                        behavior:
+                            "smooth",
+
+                        block:
+                            "start"
+
+                    });
+
+
+                },
+                250
+            );
+
+        }
+
+    }
+);
+
+</script>
+
+
+</body>
+
+</html>
