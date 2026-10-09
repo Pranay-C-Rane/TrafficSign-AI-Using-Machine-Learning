@@ -10,7 +10,12 @@ DataSet/GTSRB/Final_Training/Images/
 DataSet/GTSRB/Final_Test/Images/
 
 # Uploaded images
-WebApp/Uploads/*
+webapp/uploads/*
 
 # Temporary LibreOffice lock files
 *.~lock.*
+
+# Local detection test images and outputs
+detection/*.png
+detection/*.jpg
+detection/*.jpeg
