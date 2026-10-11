@@ -19,3 +19,6 @@ webapp/uploads/*
 detection/*.png
 detection/*.jpg
 detection/*.jpeg
+# Generated training arrays and dataset archives
+model/*.npy
+DataSet/*.zip
