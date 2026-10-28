@@ -42,6 +42,5 @@ TrafficSign-AI/
 ├── NoteBooks/
 ├── Detection/
 ├── DataSet/
-├── Test_Environment.py
 ├── requirements.txt
 └── README.md
